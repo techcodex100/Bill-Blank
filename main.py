@@ -47,20 +47,33 @@ def generate_bill_of_lading(data: BillOfLadingData):
         c = canvas.Canvas(buffer, pagesize=A4)
         width, height = A4
 
-        # === Draw background image ===
-        bg_path = r"C:\Users\Lenovo\OneDrive\Desktop\Bill of lading\static\BILL OF LADING blank.jpg"
+        # === Use relative path ===
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        bg_path = os.path.join(base_dir, "static", "bg.jpg")  # keep file inside /static
+
+        # Debugging: print to server log
+        print(f"Looking for background at: {bg_path}")
+        print(f"File exists? {os.path.exists(bg_path)}")
+
+        # === Draw background ===
         if os.path.exists(bg_path):
-            c.drawImage(ImageReader(bg_path), 0, 0, width=width, height=height)
+            try:
+                img = ImageReader(bg_path)
+                c.drawImage(img, 0, 0, width=width, height=height, preserveAspectRatio=True, mask='auto')
+            except Exception as img_err:
+                print(f"Image load error: {img_err}")
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(100, 800, "⚠️ Failed to load background image.")
         else:
             c.setFont("Helvetica-Bold", 12)
-            c.drawString(100, 800, "⚠️ Background image missing!")
+            c.drawString(100, 800, f"⚠️ Background missing at: {bg_path}")
 
         # === Helper for text ===
         def draw_text(value, x, y, font_size=10):
             c.setFont("Helvetica", font_size)
             c.drawString(x, y, value)
 
-        # === Draw fields (final positions) ===
+        # === Draw fields ===
         draw_text(data.shipper, 150, 750)
         draw_text(data.consignee, 100, 650)
         draw_text(data.notify_party, 100, 600)
